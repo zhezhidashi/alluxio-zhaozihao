@@ -47,7 +47,7 @@ import javax.annotation.concurrent.ThreadSafe;
 @VisibleForTesting
 @ThreadSafe
 public class ConsistentHashProvider {
-  private static final HashFunction HASH_FUNCTION = murmur3_32_fixed();
+  private final HashFunction HASH_FUNCTION = murmur3_32_fixed();
   private final int mMaxAttempts;
   private final long mWorkerInfoUpdateIntervalNs;
 
@@ -207,7 +207,7 @@ public class ConsistentHashProvider {
   }
 
   @VisibleForTesting
-  static BlockWorkerInfo get(NavigableMap<Integer, BlockWorkerInfo> map, String key, int index) {
+  BlockWorkerInfo get(NavigableMap<Integer, BlockWorkerInfo> map, String key, int index) {
     int hashKey = HASH_FUNCTION.hashString(format("%s%d", key, index), UTF_8).asInt();
     Map.Entry<Integer, BlockWorkerInfo> entry = map.ceilingEntry(hashKey);
     if (entry != null) {
@@ -237,7 +237,7 @@ public class ConsistentHashProvider {
   }
 
   @VisibleForTesting
-  static NavigableMap<Integer, BlockWorkerInfo> build(
+  NavigableMap<Integer, BlockWorkerInfo> build(
           List<BlockWorkerInfo> workerInfos, int numVirtualNodes) {
     Preconditions.checkArgument(!workerInfos.isEmpty(), "worker list is empty");
     NavigableMap<Integer, BlockWorkerInfo> activeNodesByConsistentHashing = new TreeMap<>();

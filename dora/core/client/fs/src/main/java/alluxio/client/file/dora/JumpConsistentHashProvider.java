@@ -38,14 +38,14 @@ import javax.annotation.Nullable;
  * An impl of JumpConsistentHash.
  */
 public class JumpConsistentHashProvider {
-  private static final HashFunction HASH_FUNCTION = murmur3_32_fixed();
+  private final HashFunction HASH_FUNCTION = murmur3_32_fixed();
   private final int mMaxAttempts;
   private final long mWorkerInfoUpdateIntervalNs;
-  private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
+  private final long UNSIGNED_MASK = 0x7fffffffffffffffL;
 
-  private static final long JUMP = 1L << 31;
+  private final long JUMP = 1L << 31;
 
-  private static final long CONSTANT = Long
+  private final long CONSTANT = Long
       .parseUnsignedLong("2862933555777941757");
 
   /**
@@ -199,7 +199,7 @@ public class JumpConsistentHashProvider {
   }
 
   @VisibleForTesting
-  static BlockWorkerInfo get(HashMap<Integer, BlockWorkerInfo> hashMap, String key, int index) {
+  BlockWorkerInfo get(HashMap<Integer, BlockWorkerInfo> hashMap, String key, int index) {
     int hashKey = HASH_FUNCTION.hashString(format("%s%d", key, index), UTF_8).asInt();
     int workerId = jumpConsistentHash(hashKey, hashMap.size());
     return hashMap.get(workerId);
@@ -215,7 +215,7 @@ public class JumpConsistentHashProvider {
    *            number of available buckets
    * @return the hash of the key
    */
-  private static int jumpConsistentHash(final int key, final int buckets) {
+  private int jumpConsistentHash(final int key, final int buckets) {
     long hashValue = -1;
     long k = key;
     long j = 0;
@@ -227,7 +227,7 @@ public class JumpConsistentHashProvider {
     return (int) hashValue;
   }
 
-  private static double toDouble(final long n) {
+  private double toDouble(final long n) {
     double d = n & UNSIGNED_MASK;
     if (n < 0) {
       d += 0x1.0p63;
@@ -251,7 +251,7 @@ public class JumpConsistentHashProvider {
   }
 
   @VisibleForTesting
-  static HashMap<Integer, BlockWorkerInfo> build(
+  HashMap<Integer, BlockWorkerInfo> build(
       List<BlockWorkerInfo> workerInfos) {
     Preconditions.checkArgument(!workerInfos.isEmpty(), "worker list is empty");
     HashMap<Integer, BlockWorkerInfo> activeNodesByJumpConsistentHashing = new HashMap<>();

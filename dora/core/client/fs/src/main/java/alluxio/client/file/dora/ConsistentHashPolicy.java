@@ -28,7 +28,7 @@ import java.util.List;
  * hash changes.
  */
 public class ConsistentHashPolicy implements WorkerLocationPolicy {
-  private static final ConsistentHashProvider HASH_PROVIDER =
+  private final ConsistentHashProvider HASH_PROVIDER =
       new ConsistentHashProvider(100, Constants.SECOND_MS);
   /**
    * This is the number of virtual nodes in the consistent hashing algorithm.

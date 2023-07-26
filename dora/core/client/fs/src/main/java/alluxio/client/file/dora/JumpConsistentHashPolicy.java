@@ -25,7 +25,7 @@ import java.util.List;
  * https://arxiv.org/pdf/1406.2294.pdf
  */
 public class JumpConsistentHashPolicy implements WorkerLocationPolicy {
-  private static final JumpConsistentHashProvider HASH_PROVIDER =
+  private final JumpConsistentHashProvider HASH_PROVIDER =
       new JumpConsistentHashProvider(100, Constants.SECOND_MS);
 
   @Override
