@@ -27,8 +27,8 @@ import java.util.List;
  * On top of that, consistent hashing makes sure worker membership changes incur minimal
  * hash changes.
  */
-public class DxHashPolicy implements WorkerLocationPolicy {
-  private final DxHashProvider HASH_PROVIDER;
+public class MultiProbeHashPolicy implements WorkerLocationPolicy {
+  private final MultiProbeHashProvider HASH_PROVIDER;
   /**
    * This is the number of virtual nodes in the consistent hashing algorithm.
    * In a consistent hashing algorithm, on membership changes, some virtual nodes are
@@ -39,12 +39,12 @@ public class DxHashPolicy implements WorkerLocationPolicy {
    */
 
   /**
-   * Constructs a new {@link DxHashPolicy}.
+   * Constructs a new {@link MultiProbeHashPolicy}.
    *
-   * @param replicas the number of replicas
+   * @param probes the number of probe
    */
-  public DxHashPolicy(int replicas) {
-    HASH_PROVIDER = new DxHashProvider(100, Constants.SECOND_MS, replicas);
+  public MultiProbeHashPolicy(int probes) {
+    HASH_PROVIDER = new MultiProbeHashProvider(100, Constants.SECOND_MS, probes);
   }
 
   @Override

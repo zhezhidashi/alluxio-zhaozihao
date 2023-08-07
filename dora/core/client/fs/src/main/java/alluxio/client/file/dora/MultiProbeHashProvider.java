@@ -18,6 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import alluxio.Constants;
 import alluxio.client.block.BlockWorkerInfo;
+import alluxio.grpc.Block;
 import alluxio.wire.WorkerNetAddress;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -28,6 +29,7 @@ import com.google.common.hash.HashFunction;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
@@ -43,9 +45,8 @@ import javax.annotation.concurrent.ThreadSafe;
  */
 @VisibleForTesting
 @ThreadSafe
-public class DxHashProvider {
-  private final int mReplicas;
-  private final MessageDigest mDigest;
+public class MultiProbeHashProvider {
+  private final int mProbes;
   private final int mMaxAttempts;
   private final long mWorkerInfoUpdateIntervalNs;
   private final HashFunction HASH_FUNCTION = murmur3_32_fixed();
@@ -59,10 +60,15 @@ public class DxHashProvider {
   private final AtomicReference<List<BlockWorkerInfo>> mLastWorkerInfos =
       new AtomicReference<>(ImmutableList.of());
 
+  /** Common default seed to use during hashing of the nodes. */
+  private static final int  SEED = 0xDEADBEEF;
+
+  /** Internal representation of the consistent hashing key ring. */
   @Nullable
-  private volatile SortedMap<Integer, BlockWorkerInfo> mActiveNodes;
+  private List<Point> mRing;
+
   /**
-   * Lock to protect the lazy initialization of {@link #mActiveNodes}.
+   * Lock to protect the lazy initialization of {@link #mRing}.
    */
   private final Object mInitLock = new Object();
 
@@ -71,17 +77,12 @@ public class DxHashProvider {
    *
    * @param maxAttempts max attempts to rehash
    * @param workerListTtlMs interval between retries
+   * @param probes number of probes to use
    */
-  public DxHashProvider(int maxAttempts, long workerListTtlMs, int replicas) {
+  public MultiProbeHashProvider(int maxAttempts, long workerListTtlMs, int probes) {
     mMaxAttempts = maxAttempts;
     mWorkerInfoUpdateIntervalNs = workerListTtlMs * Constants.MS_NANO;
-    mReplicas = replicas;
-    try {
-      mDigest = MessageDigest.getInstance("SHA-1");
-//      mDigest = MessageDigest.getInstance("MD5");
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
+    mProbes = probes;
   }
 
   /**
@@ -142,11 +143,11 @@ public class DxHashProvider {
    * After the initialization, the map must not be null.
    */
   private void maybeInitialize(List<BlockWorkerInfo> workerInfos) {
-    if (mActiveNodes == null) {
+    if (mRing == null) {
       synchronized (mInitLock) {
         // only one thread should reach here
         // test again to skip re-initialization
-        if (mActiveNodes == null) {
+        if (mRing == null) {
           build(workerInfos);
           mLastWorkerInfos.set(workerInfos);
           mLastUpdatedTimestamp.set(System.nanoTime());
@@ -198,16 +199,14 @@ public class DxHashProvider {
 
   @VisibleForTesting
   BlockWorkerInfo get(String key, int index) {
-    Preconditions.checkState(mActiveNodes != null, "Hash provider is not properly initialized");
-    if (mActiveNodes.isEmpty()) {
+    Preconditions.checkState(mRing != null, "Hash provider is not properly initialized");
+    if (mRing.isEmpty()) {
       return null;
     }
     int hash = hash(String.format("%s%d", key, index));
-    if (!mActiveNodes.containsKey(hash)) {
-      SortedMap<Integer, BlockWorkerInfo> tailMap = mActiveNodes.tailMap(hash);
-      hash = tailMap.isEmpty() ? mActiveNodes.firstKey() : tailMap.firstKey();
-    }
-    return mActiveNodes.get(hash);
+
+    final int id = getIndex( key );
+    return mRing.get( id ).mResource;
   }
 
   @VisibleForTesting
@@ -215,10 +214,10 @@ public class DxHashProvider {
     return mLastWorkerInfos.get();
   }
 
-  @VisibleForTesting
-  SortedMap<Integer, BlockWorkerInfo> getActiveNodesMap() {
-    return mActiveNodes;
-  }
+//  @VisibleForTesting
+//  SortedMap<Integer, BlockWorkerInfo> getActiveNodesMap() {
+//    return mActiveNodes;
+//  }
 
   @VisibleForTesting
   long getUpdateCount() {
@@ -229,35 +228,148 @@ public class DxHashProvider {
   private void build(
       List<BlockWorkerInfo> workerInfos) {
     Preconditions.checkArgument(!workerInfos.isEmpty(), "worker list is empty");
-    mActiveNodes = new TreeMap<>();
+    mRing = new ArrayList<>();
     for (BlockWorkerInfo workerInfo : workerInfos) {
       add(workerInfo);
     }
   }
 
   private void add(BlockWorkerInfo node) {
-    Preconditions.checkState(mActiveNodes != null, "Hash provider is not properly initialized");
-    for (int i = 0; i < mReplicas; i++) {
-      mActiveNodes.put(hash(node.toString() + i), node);
-    }
+    Preconditions.checkState(mRing != null, "Hash provider is not properly initialized");
+    final Point bucket = wrap( node );
+    final int pos = Collections.binarySearch( mRing, bucket );
+
+    final int index = -(pos + 1);
+    mRing.add( index, bucket );
   }
 
   private void remove(BlockWorkerInfo node) {
-    Preconditions.checkState(mActiveNodes != null, "Hash provider is not properly initialized");
-    for (int i = 0; i < mReplicas; i++) {
-      mActiveNodes.remove(hash(node.toString() + i));
-    }
+    Preconditions.checkState(mRing != null, "Hash provider is not properly initialized");
+
+    final Point bucket = wrap( node );
+    final int pos = Collections.binarySearch( mRing, bucket );
+    mRing.remove( pos );
   }
 
+  /**
+   * Wraps the given resource into a point in the ring.
+   *
+   * @param resource the resource to wrap
+   * @return the related point in the ring
+   */
+  private Point wrap( BlockWorkerInfo resource )
+  {
+
+    final int hash = hash( String.format("%s%d", resource.getNetAddress().dumpMainInfo(), SEED) );
+    return new Point( resource, hash );
+
+  }
+
+  /**
+   * Computes the index of the point related to the given key.
+   *
+   * @param key key to search
+   * @return index of the related point
+   */
   private int hash(String key) {
     return HASH_FUNCTION.hashString(key, UTF_8).asInt();
-//    mDigest.reset();
-//    mDigest.update(key.getBytes());
-//    byte[] digest = mDigest.digest();
-//    long h = 0;
-//    return ((long) (digest[3] & 0xFF) << 24)
-//        | ((long) (digest[2] & 0xFF) << 16)
-//        | ((long) (digest[1] & 0xFF) << 8)
-//        | ((long) digest[0] & 0xFF);
   }
+
+  private int getIndex( String key )
+  {
+
+    int index = 0;
+    int minDistance = Integer.MAX_VALUE;
+    for( int i = 0; i < mProbes; i++ )
+    {
+
+      final int hash = hash( String.format("%s%d", key, i) );
+
+      int low = 0;
+      int high = mRing.size();
+      while( low < high )
+      {
+
+        final int mid = (low + high) >>> 1;
+        if( mRing.get(mid).mHash > hash ) {
+          high = mid;
+        } else {
+          low = mid + 1;
+        }
+
+      }
+
+      /*
+       * This check implements the concept of ring.
+       * If we exceed the last we start over.
+       */
+      if (low >= mRing.size()) {
+        low = 0;
+      }
+
+      final int distance = mRing.get( low ).distance( hash );
+      if( distance < minDistance )
+      {
+        minDistance = distance;
+        index = low;
+      }
+
+    }
+
+    return index;
+
+  }
+}
+
+class Point implements Comparable<Point>
+{
+
+  /** The resource to store. */
+  final BlockWorkerInfo mResource;
+
+  /** The position in the consistent hash ring. */
+  final int mHash;
+
+
+  /**
+   * Constructor with parameters.
+   *
+   * @param resource the resource to store.
+   * @param hash     the position in the consistent hash ring
+   */
+  Point( BlockWorkerInfo resource, int hash )
+  {
+
+    super();
+
+    this.mResource = resource;
+    this.mHash = hash;
+
+  }
+
+  /**
+   * Returns the distance between the given hash
+   * and the hash of the current bucket.
+   *
+   * @param hash the hash to test
+   * @return the related distance
+   */
+  int distance( int hash )
+  {
+
+    return Math.abs( this.mHash - hash );
+
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int compareTo( Point other )
+  {
+
+    return Long.compare( this.mHash, other.mHash );
+
+  }
+
 }
