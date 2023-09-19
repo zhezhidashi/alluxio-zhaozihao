@@ -15,13 +15,19 @@ import java.util.List;
 import java.util.Scanner;
 
 public class HashBenchmark1 {
+  // worker 的数量
   private final int NUM_WORKERS = 10;
-  private final int NUM_VIRTUAL_NODES = 5000;
+  // 虚拟节点数量
+  private final int NUM_VIRTUAL_NODES = 4000;
+  // 常量：1亿
   private final long Yi = 100000000L;
   // 测试文件数量是 1亿，2亿，5亿，10亿
   private final long NUM_FILES = 1 * Yi;
+  // worker 列表
   private List<BlockWorkerInfo> mBlockWorkerInfos = new ArrayList<>();
+  // 预先随机生成的文件名，存储到了txt里面
   private String fineNamePath = "src/test/java/alluxio/client/file/dora/billion.txt";
+  // 输出文件，主要是记录每个worker被分配的文件数
   private String outputFilePath = "/root/zzh/hash-test/hash1-output.txt";
   @Before
   public void setUp() {
