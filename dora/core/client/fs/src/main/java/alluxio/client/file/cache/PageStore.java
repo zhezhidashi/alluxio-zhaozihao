@@ -49,7 +49,7 @@ public interface PageStore extends AutoCloseable {
     final PageStore pageStore;
     switch (options.getType()) {
       case LOCAL:
-        pageStore = new LocalPageStore(options);
+        pageStore = new MemoryPageStore((int) options.getPageSize());
         break;
       case MEM:
         pageStore = new MemoryPageStore((int) options.getPageSize());

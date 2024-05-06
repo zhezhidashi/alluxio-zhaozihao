@@ -93,7 +93,7 @@ public class PageStoreOptions {
     return optionsList;
   }
 
-  private PageStoreType mStoreType = PageStoreType.LOCAL;
+  private PageStoreType mStoreType = PageStoreType.MEM;
   private int mFileBuckets = 1000;
   /**
    * Root directory where the data is stored.
