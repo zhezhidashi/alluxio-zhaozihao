@@ -5606,7 +5606,7 @@ public final class PropertyKey implements Comparable<PropertyKey> {
           .build();
   public static final PropertyKey USER_CLIENT_CACHE_STORE_TYPE =
       enumBuilder(Name.USER_CLIENT_CACHE_STORE_TYPE, PageStoreType.class)
-          .setDefaultValue(PageStoreType.LOCAL)
+          .setDefaultValue(PageStoreType.MEM)
           .setDescription("The type of page store to use for client-side cache. Can be either "
               + "`LOCAL` or `ROCKS`. The `LOCAL` page store stores all pages in a directory, "
               + "the `ROCKS` page store utilizes rocksDB to persist the data.")

@@ -36,7 +36,7 @@ public class PageStoreOptions {
     List<String> cacheSizes = conf.getList(PropertyKey.USER_CLIENT_CACHE_SIZE);
     PageStoreType storeType = conf.getEnum(
         PropertyKey.USER_CLIENT_CACHE_STORE_TYPE, PageStoreType.class);
-    System.out.println("PageStoreOptions的List<PageStoreOptions> create，" + PropertyKey.USER_CLIENT_CACHE_STORE_TYPE);
+    System.out.println("ZZH: PageStoreOptions.java create，" + PropertyKey.USER_CLIENT_CACHE_STORE_TYPE);
     List<PageStoreOptions> optionsList = createPageStoreOptions(dirs, cacheSizes, storeType);
     optionsList.forEach(options -> {
       options.setFileBuckets(conf.getInt(PropertyKey.USER_CLIENT_CACHE_LOCAL_STORE_FILE_BUCKETS))
