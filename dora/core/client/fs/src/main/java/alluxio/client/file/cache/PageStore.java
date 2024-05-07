@@ -50,11 +50,11 @@ public interface PageStore extends AutoCloseable {
     switch (options.getType()) {
       case LOCAL:
         pageStore = new LocalPageStore(options);
-        System.out.println("PageStore接口，走了LOCAL");
+        System.out.println("ZZH: PageStore.java -- create, it choose LOCAL");
         break;
       case MEM:
         pageStore = new MemoryPageStore((int) options.getPageSize());
-        System.out.println("PageStore接口，走了MEM");
+        System.out.println("ZZH: PageStore.java -- create, it choose MEM");
         break;
       default:
         throw new IllegalArgumentException(

@@ -60,6 +60,7 @@ public interface PageStoreDir extends CacheStatus {
    */
   static PageStoreDir createPageStoreDir(CacheEvictorOptions cacheEvictorOptions,
                                          PageStoreOptions pageStoreOptions) {
+    System.out.println("ZZH: PageStoreDir.java-- createPageStoreDir, it choose " + pageStoreOptions.getType());
     switch (pageStoreOptions.getType()) {
       case LOCAL:
         return new LocalPageStoreDir(
