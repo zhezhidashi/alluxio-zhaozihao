@@ -84,6 +84,7 @@ public class DoraWorkerModule extends AbstractModule {
 
     // Note that dora can only use Paged Store
     try {
+      System.out.println("ZZH: DoraWorkerModule.java -- configure " +  Configuration.global().getString(PropertyKey.USER_CLIENT_CACHE_STORE_TYPE));
       CacheManagerOptions cacheManagerOptions =
           CacheManagerOptions.createForWorker(Configuration.global());
 

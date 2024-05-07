@@ -13,6 +13,7 @@ package alluxio.client.file.cache;
 
 import alluxio.client.file.cache.evictor.CacheEvictorOptions;
 import alluxio.client.file.cache.store.PageStoreOptions;
+import alluxio.client.file.cache.store.PageStoreType;
 import alluxio.conf.AlluxioConfiguration;
 import alluxio.conf.PropertyKey;
 
@@ -39,6 +40,8 @@ public class CacheManagerOptions {
    * @return instance of CacheManagerOptions
    */
   public static CacheManagerOptions create(AlluxioConfiguration conf) {
+    System.out.println("ZZH: CacheManagerOptions.java -- create " + conf.getEnum(
+        PropertyKey.USER_CLIENT_CACHE_STORE_TYPE, PageStoreType.class));
     CacheEvictorOptions cacheEvictorOptions = new CacheEvictorOptions()
         .setEvictorClass(conf.getClass(PropertyKey.USER_CLIENT_CACHE_EVICTOR_CLASS))
         .setIsNondeterministic(
@@ -67,6 +70,8 @@ public class CacheManagerOptions {
    * @return instance of CacheManagerOptions
    */
   public static CacheManagerOptions createForWorker(AlluxioConfiguration conf) {
+    System.out.println("ZZH: CacheManagerOptions.java -- createForWorker " + conf.getEnum(
+        PropertyKey.USER_CLIENT_CACHE_STORE_TYPE, PageStoreType.class));
     CacheEvictorOptions cacheEvictorOptions = new CacheEvictorOptions()
         .setEvictorClass(conf.getClass(PropertyKey.WORKER_PAGE_STORE_EVICTOR_CLASS))
         .setIsNondeterministic(
@@ -160,6 +165,10 @@ public class CacheManagerOptions {
    * @return the list of PageStoreOptions
    */
   public List<PageStoreOptions> getPageStoreOptions() {
+    System.out.println("ZZH: CacheManagerOptions.java -- getPageStoreOptions as follows");
+    for (PageStoreOptions options : mPageStoreOptions) {
+      System.out.println("ZZH: CacheManagerOptions.java -- getPageStoreOptions: " + options.getType());
+    }
     return mPageStoreOptions;
   }
 
@@ -239,6 +248,10 @@ public class CacheManagerOptions {
    */
   public CacheManagerOptions setPageStoreOptions(
       List<PageStoreOptions> pageStoreOptions) {
+    System.out.println("ZZH: CacheManagerOptions.java -- setPageStoreOptions as follows");
+    for (PageStoreOptions options : pageStoreOptions) {
+      System.out.println("ZZH: CacheManagerOptions.java -- setPageStoreOptions: " + options.getType());
+    }
     mPageStoreOptions = pageStoreOptions;
     return this;
   }

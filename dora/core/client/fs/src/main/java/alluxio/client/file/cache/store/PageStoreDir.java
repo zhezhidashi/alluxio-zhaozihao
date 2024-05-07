@@ -45,6 +45,7 @@ public interface PageStoreDir extends CacheStatus {
    */
   static List<PageStoreDir> createPageStoreDirs(CacheManagerOptions options)
       throws IOException {
+    System.out.println("ZZH: PageStoreDir.java -- createPageStoreDirs");
     return options.getPageStoreOptions().stream()
         .map(pageStoreOptions -> createPageStoreDir(options.getCacheEvictorOptions(),
             pageStoreOptions))
