@@ -56,6 +56,7 @@ public class PageStoreOptions {
    * @return a list of instance of {@link PageStoreOptions}
    */
   public static List<PageStoreOptions> createForWorkerPageStore(AlluxioConfiguration conf) {
+    System.out.println("ZZH PageStoreOptions.java -- createForWorkerPageStore ");
     List<String> dirs = conf.getList(PropertyKey.WORKER_PAGE_STORE_DIRS);
     List<String> cacheSizes = conf.getList(PropertyKey.WORKER_PAGE_STORE_SIZES);
     PageStoreType storeType = conf.getEnum(
