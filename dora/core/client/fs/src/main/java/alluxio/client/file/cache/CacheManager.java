@@ -94,6 +94,8 @@ public interface CacheManager extends AutoCloseable, CacheStatus {
       if (CACHE_MANAGER.get() == null) {
         try (LockResource lockResource = new LockResource(CACHE_INIT_LOCK)) {
           if (CACHE_MANAGER.get() == null) {
+            System.out.println("ZZH: CacheManager.java -- get  CACHE_MANAGER.get() == null");
+            LOG.info("ZZH: CacheManager.java -- get  CACHE_MANAGER.get() == null");
             CACHE_MANAGER.set(
                 create(conf));
           }
@@ -102,6 +104,8 @@ public interface CacheManager extends AutoCloseable, CacheStatus {
           throw new IOException("Failed to create CacheManager", e);
         }
       }
+      System.out.println("ZZH: CacheManager.java -- get  CACHE_MANAGER.get() != null");
+      LOG.info("ZZH: CacheManager.java -- get  CACHE_MANAGER.get() != null");
       return CACHE_MANAGER.get();
     }
 
@@ -110,6 +114,8 @@ public interface CacheManager extends AutoCloseable, CacheStatus {
      * @return an instance of {@link CacheManager}
      */
     public static CacheManager create(AlluxioConfiguration conf) throws IOException {
+      System.out.println("ZZH: CacheManager.java -- create");
+      LOG.info("ZZH: CacheManager.java -- create");
       CacheManagerOptions options = CacheManagerOptions.create(conf);
       return create(conf, options, PageMetaStore.create(options));
     }

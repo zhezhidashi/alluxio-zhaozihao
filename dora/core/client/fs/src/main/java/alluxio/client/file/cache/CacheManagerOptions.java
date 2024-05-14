@@ -16,6 +16,8 @@ import alluxio.client.file.cache.store.PageStoreOptions;
 import alluxio.client.file.cache.store.PageStoreType;
 import alluxio.conf.AlluxioConfiguration;
 import alluxio.conf.PropertyKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -23,6 +25,7 @@ import java.util.List;
  * Options for initiating local cache manager.
  */
 public class CacheManagerOptions {
+  static Logger LOG = LoggerFactory.getLogger(CacheManagerOptions.class);
   private boolean mAsyncRestoreEnabled;
   private boolean mAsyncWriteEnabled;
   private int mAsyncWriteThreads;
@@ -41,6 +44,8 @@ public class CacheManagerOptions {
    */
   public static CacheManagerOptions create(AlluxioConfiguration conf) {
     System.out.println("ZZH: CacheManagerOptions.java -- create " + conf.getEnum(
+        PropertyKey.USER_CLIENT_CACHE_STORE_TYPE, PageStoreType.class));
+    LOG.info("ZZH: CacheManagerOptions.java -- create " + conf.getEnum(
         PropertyKey.USER_CLIENT_CACHE_STORE_TYPE, PageStoreType.class));
     CacheEvictorOptions cacheEvictorOptions = new CacheEvictorOptions()
         .setEvictorClass(conf.getClass(PropertyKey.USER_CLIENT_CACHE_EVICTOR_CLASS))
