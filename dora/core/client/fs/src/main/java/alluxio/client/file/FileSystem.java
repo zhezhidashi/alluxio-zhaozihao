@@ -191,8 +191,8 @@ public interface FileSystem extends Closeable {
       if (options.isDataCacheEnabled()
           && CommonUtils.PROCESS_TYPE.get() == CommonUtils.ProcessType.CLIENT) {
         try {
-          System.out.println("FileSystem.java create");
-          LOG.info("FileSystem.java create");
+          System.out.println("ZZH: FileSystem.java create");
+          LOG.info("ZZH: FileSystem.java create");
           CacheManager cacheManager = CacheManager.Factory.get(conf);
           LOG.debug("Client local data caching enabled");
           return new LocalCacheFileSystem(cacheManager, fs, conf);
